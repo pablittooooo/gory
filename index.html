@@ -766,155 +766,11 @@ const PEAKS = [
 ];
 
 /* ═══════════════════════════════════════════════════════════════
-   THEME
+   STAN GLOBALNY
 ═══════════════════════════════════════════════════════════════ */
 let isDark = true;
-
-const themeBtn = document.getElementById('themeBtn');
-themeBtn.addEventListener('click', () => {
-  isDark = !isDark;
-  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
-  themeBtn.textContent = isDark ? '🌙' : '☀️';
-  updateTileLayer();
-});
-
-/* ═══════════════════════════════════════════════════════════════
-   MAP
-═══════════════════════════════════════════════════════════════ */
-const map = L.map('map', {
-  center: [51.9, 19.1],
-  zoom: 7,
-  zoomControl: true,
-  scrollWheelZoom: true,
-  attributionControl: true,
-});
-
-let tileLayer;
-
-function updateTileLayer() {
-  if (tileLayer) map.removeLayer(tileLayer);
-  const url = isDark
-    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-    : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
-  tileLayer = L.tileLayer(url, {
-    attribution: '© <a href="https://www.openstreetmap.org/">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>',
-    maxZoom: 18,
-    subdomains: 'abcd',
-  }).addTo(map);
-  // Refresh marker icons to match current theme
-  if (typeof markers !== 'undefined') {
-    markers.forEach(({ peak, marker }) => marker.setIcon(createMarkerIcon()));
-  }
-}
-updateTileLayer();
-
-/* Fix Leaflet's broken default icon paths on GitHub Pages */
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-});
-
-/* Custom marker icon */
-function createMarkerIcon() {
-  const color = isDark ? '#d4a853' : '#8b4513';
-  const ringColor = isDark ? '#d4a85366' : '#8b451366';
-  const border = isDark ? '#0d1117' : '#f5f0e8';
-  return L.divIcon({
-    html: `<div style="width:14px;height:14px;background:${color};border:3px solid ${border};border-radius:50%;box-shadow:0 0 0 5px ${ringColor};position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);"></div>`,
-    className: '',
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
-    popupAnchor: [0, -16],
-  });
-}
-
-/* Popup HTML */
-function buildPopupHtml(peak) {
-  const imgHtml = peak.photo
-    ? `<img class="peak-popup-img" src="${peak.photo}" alt="${peak.name}" loading="lazy" />`
-    : `<div class="peak-popup-img-placeholder"><div class="mountain-icon">⛰</div><div>Brak zdjęcia</div></div>`;
-
-  return `
-    <div class="peak-popup">
-      ${imgHtml}
-      <div class="peak-popup-body">
-        <div class="peak-popup-rank">Korona Gór Polski · ${peak.rank}/28</div>
-        <div class="peak-popup-name">${peak.name}</div>
-        <div class="peak-popup-height">${peak.height.toLocaleString('pl-PL')} <span>m n.p.m.</span></div>
-        <div class="peak-popup-meta">
-          <div class="peak-popup-meta-row">
-            <strong>Województwo</strong>
-            <span>${peak.province}</span>
-          </div>
-          <div class="peak-popup-meta-row">
-            <strong>Pasmo</strong>
-            <span>${peak.range}</span>
-          </div>
-        </div>
-        <div class="peak-popup-desc">${peak.desc}</div>
-      </div>
-    </div>`;
-}
-
-/* Place markers */
+let tileLayer = null;
 const markers = [];
-PEAKS.forEach(peak => {
-  const marker = L.marker([peak.lat, peak.lng], { icon: createMarkerIcon() })
-    .addTo(map)
-    .bindPopup(buildPopupHtml(peak), {
-      maxWidth: 320,
-      minWidth: 280,
-      className: 'peak-leaflet-popup',
-    });
-  markers.push({ peak, marker });
-});
-
-
-
-
-/* ═══════════════════════════════════════════════════════════════
-   AUTH MODAL
-═══════════════════════════════════════════════════════════════ */
-const authModal = document.getElementById('authModal');
-const loginBtn = document.getElementById('loginBtn');
-const modalClose = document.getElementById('modalClose');
-
-loginBtn.addEventListener('click', () => authModal.classList.add('open'));
-modalClose.addEventListener('click', () => authModal.classList.remove('open'));
-authModal.addEventListener('click', e => { if (e.target === authModal) authModal.classList.remove('open'); });
-
-/* Google OAuth — wymaga konfiguracji w Google Cloud Console */
-document.getElementById('googleBtn').addEventListener('click', () => {
-  showToast('⚙️ Skonfiguruj Google OAuth w Google Cloud Console');
-  /* Po konfiguracji: window.location.href = googleOAuthUrl; */
-});
-
-/* Facebook OAuth — wymaga konfiguracji w Meta for Developers */
-document.getElementById('facebookBtn').addEventListener('click', () => {
-  showToast('⚙️ Skonfiguruj Facebook OAuth w Meta for Developers');
-  /* Po konfiguracji: window.location.href = fbOAuthUrl; */
-});
-
-/* Demo: symulacja zalogowanego użytkownika (do testów) */
-// uncommment to test logged-in state:
-// setLoggedIn({ name: 'Jan Kowalski', avatarUrl: null });
-
-function setLoggedIn(user) {
-  const area = document.getElementById('authArea');
-  const initials = user.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
-  area.innerHTML = `
-    <div class="user-chip" id="userChip">
-      <div class="user-avatar">
-        ${user.avatarUrl ? `<img src="${user.avatarUrl}" />` : initials}
-      </div>
-      <span class="user-name">${user.name.split(' ')[0]}</span>
-    </div>`;
-  document.getElementById('userChip').addEventListener('click', () => {
-    showToast('👤 Panel użytkownika — wkrótce!');
-  });
-}
 
 /* ═══════════════════════════════════════════════════════════════
    TOAST
@@ -929,11 +785,128 @@ function showToast(msg, duration = 3000) {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   HANDLE OAUTH REDIRECT (po powrocie ze strony logowania)
-   Tutaj będzie obsługa tokenu z Google/Facebook
+   MARKERY
 ═══════════════════════════════════════════════════════════════ */
-// const params = new URLSearchParams(window.location.search);
-// if (params.get('code')) { /* handle OAuth code */ }
+function createMarkerIcon() {
+  const color  = isDark ? '#d4a853' : '#8b4513';
+  const ring   = isDark ? '#d4a85355' : '#8b451344';
+  const border = isDark ? '#0d1117'   : '#f5f0e8';
+  return L.divIcon({
+    html: `<div style="
+      width:14px;height:14px;
+      background:${color};
+      border:3px solid ${border};
+      border-radius:50%;
+      box-shadow:0 0 0 5px ${ring};
+      position:absolute;
+      top:50%;left:50%;
+      transform:translate(-50%,-50%);
+    "></div>`,
+    className: '',
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+    popupAnchor: [0, -16],
+  });
+}
+
+function refreshMarkerIcons() {
+  markers.forEach(({ marker }) => marker.setIcon(createMarkerIcon()));
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   POPUP
+═══════════════════════════════════════════════════════════════ */
+function buildPopupHtml(peak) {
+  const imgHtml = peak.photo
+    ? `<img class="peak-popup-img" src="${peak.photo}" alt="${peak.name}" loading="lazy" />`
+    : `<div class="peak-popup-img-placeholder"><div class="mountain-icon">⛰</div><div>Brak zdjęcia</div></div>`;
+  return `
+    <div class="peak-popup">
+      ${imgHtml}
+      <div class="peak-popup-body">
+        <div class="peak-popup-rank">Korona Gór Polski · ${peak.rank}/28</div>
+        <div class="peak-popup-name">${peak.name}</div>
+        <div class="peak-popup-height">${peak.height.toLocaleString('pl-PL')} <span>m n.p.m.</span></div>
+        <div class="peak-popup-meta">
+          <div class="peak-popup-meta-row"><strong>Województwo</strong><span>${peak.province}</span></div>
+          <div class="peak-popup-meta-row"><strong>Pasmo</strong><span>${peak.range}</span></div>
+        </div>
+        <div class="peak-popup-desc">${peak.desc}</div>
+      </div>
+    </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MAPA
+═══════════════════════════════════════════════════════════════ */
+const map = L.map('map', {
+  center: [51.9, 19.1],
+  zoom: 7,
+  zoomControl: true,
+  scrollWheelZoom: true,
+});
+
+function setTileLayer() {
+  if (tileLayer) map.removeLayer(tileLayer);
+  const url = isDark
+    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+    : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+  tileLayer = L.tileLayer(url, {
+    attribution: '© <a href="https://www.openstreetmap.org/">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>',
+    maxZoom: 18,
+    subdomains: 'abcd',
+  }).addTo(map);
+}
+
+/* Inicjalizacja mapy */
+setTileLayer();
+
+PEAKS.forEach(peak => {
+  const marker = L.marker([peak.lat, peak.lng], { icon: createMarkerIcon() })
+    .addTo(map)
+    .bindPopup(buildPopupHtml(peak), { maxWidth: 320, minWidth: 280 });
+  markers.push({ peak, marker });
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   MOTYW
+═══════════════════════════════════════════════════════════════ */
+document.getElementById('themeBtn').addEventListener('click', () => {
+  isDark = !isDark;
+  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+  document.getElementById('themeBtn').textContent = isDark ? '🌙' : '☀️';
+  setTileLayer();
+  refreshMarkerIcons();
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   AUTH MODAL
+═══════════════════════════════════════════════════════════════ */
+const authModal  = document.getElementById('authModal');
+const loginBtn   = document.getElementById('loginBtn');
+const modalClose = document.getElementById('modalClose');
+
+loginBtn.addEventListener('click',   () => authModal.classList.add('open'));
+modalClose.addEventListener('click', () => authModal.classList.remove('open'));
+authModal.addEventListener('click',  e => { if (e.target === authModal) authModal.classList.remove('open'); });
+
+document.getElementById('googleBtn').addEventListener('click', () => {
+  showToast('⚙️ Skonfiguruj Google OAuth w Google Cloud Console');
+});
+document.getElementById('facebookBtn').addEventListener('click', () => {
+  showToast('⚙️ Skonfiguruj Facebook OAuth w Meta for Developers');
+});
+
+function setLoggedIn(user) {
+  const area = document.getElementById('authArea');
+  const initials = user.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  area.innerHTML = `
+    <div class="user-chip" id="userChip">
+      <div class="user-avatar">${user.avatarUrl ? `<img src="${user.avatarUrl}" />` : initials}</div>
+      <span class="user-name">${user.name.split(' ')[0]}</span>
+    </div>`;
+  document.getElementById('userChip').addEventListener('click', () => showToast('👤 Panel użytkownika — wkrótce!'));
+}
 </script>
 </body>
 </html>
