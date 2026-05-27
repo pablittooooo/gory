@@ -801,6 +801,10 @@ function updateTileLayer() {
     maxZoom: 18,
     subdomains: 'abcd',
   }).addTo(map);
+  // Refresh marker icons to match current theme
+  if (typeof markers !== 'undefined') {
+    markers.forEach(({ peak, marker }) => marker.setIcon(createMarkerIcon(peak)));
+  }
 }
 updateTileLayer();
 
@@ -864,14 +868,8 @@ PEAKS.forEach(peak => {
   markers.push({ peak, marker });
 });
 
-/* Refresh marker icons on theme change */
-const origUpdateTile = updateTileLayer;
-function updateTileLayer() {
-  origUpdateTile();
-  markers && markers.forEach(({ peak, marker }) => {
-    marker.setIcon(createMarkerIcon(peak));
-  });
-}
+
+
 
 /* ═══════════════════════════════════════════════════════════════
    AUTH MODAL
