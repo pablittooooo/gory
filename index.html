@@ -803,27 +803,30 @@ function updateTileLayer() {
   }).addTo(map);
   // Refresh marker icons to match current theme
   if (typeof markers !== 'undefined') {
-    markers.forEach(({ peak, marker }) => marker.setIcon(createMarkerIcon(peak)));
+    markers.forEach(({ peak, marker }) => marker.setIcon(createMarkerIcon()));
   }
 }
 updateTileLayer();
 
+/* Fix Leaflet's broken default icon paths on GitHub Pages */
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+});
+
 /* Custom marker icon */
-function createMarkerIcon(peak) {
+function createMarkerIcon() {
   const color = isDark ? '#d4a853' : '#8b4513';
-  const ring = isDark ? 'rgba(212,168,83,.3)' : 'rgba(139,69,19,.2)';
-  const bg = isDark ? '#0d1117' : '#f5f0e8';
-  const svg = `
-    <svg width="26" height="26" viewBox="0 0 26 26" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="13" cy="13" r="11" fill="${ring}" />
-      <circle cx="13" cy="13" r="6" fill="${color}" stroke="${bg}" stroke-width="2.5"/>
-    </svg>`;
+  const ringColor = isDark ? '#d4a85366' : '#8b451366';
+  const border = isDark ? '#0d1117' : '#f5f0e8';
   return L.divIcon({
-    html: svg,
+    html: `<div style="width:14px;height:14px;background:${color};border:3px solid ${border};border-radius:50%;box-shadow:0 0 0 5px ${ringColor};position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);"></div>`,
     className: '',
-    iconSize: [26, 26],
-    iconAnchor: [13, 13],
-    popupAnchor: [0, -14],
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+    popupAnchor: [0, -16],
   });
 }
 
@@ -858,7 +861,7 @@ function buildPopupHtml(peak) {
 /* Place markers */
 const markers = [];
 PEAKS.forEach(peak => {
-  const marker = L.marker([peak.lat, peak.lng], { icon: createMarkerIcon(peak) })
+  const marker = L.marker([peak.lat, peak.lng], { icon: createMarkerIcon() })
     .addTo(map)
     .bindPopup(buildPopupHtml(peak), {
       maxWidth: 320,
